@@ -1,8 +1,9 @@
 '''Ensure to install the following libraries:
 - requests
 - pandas
-- selenium'''
-''' Download a web driver and set up the path to the driver.'''
+- selenium
+Download a web driver and set up the path to the driver.
+The attached file should be named 'python-assignment.docx' '''
 
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
