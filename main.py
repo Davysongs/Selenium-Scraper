@@ -6,30 +6,29 @@ file_path = 'python-assignment.docx'
 doc = Document(file_path)
 
 # Prepare data structures to store the text and links
-titles = []
-links = []
+data = []  # List of dictionaries to create a DataFrame
 
 # Parse the document
+current_title = None
+
 for para in doc.paragraphs:
     text = para.text.strip()
-    if text:
-        # If the paragraph contains a URL, extract it
-        if "http" in text:
-            # Find all URLs in the text (simple heuristic)
-            urls = [word for word in text.split() if "http" in word]
-            links.extend(urls)
-            # If it's a title followed by links, store them in separate lists
-            title = text.split()[0]  # Assuming the first word is the title
-            titles.extend([title] * len(urls))
-        else:
-            # If the paragraph is not a link, consider it as a title
-            titles.append(text)
+    if not text:
+        continue  # Skip empty paragraphs
+
+    if not current_title and "http" not in text:
+        # If the paragraph doesn't contain a URL and we don't have a title yet, set it as the current title
+        current_title = text
+
+    elif "http" in text:
+        # If the paragraph contains URLs, extract them
+        urls = [word for word in text.split() if "http" in word]
+        for url in urls:
+            # Ensure each URL has an associated title
+            data.append({"Title": current_title, "Link": url})
 
 # Create a DataFrame to store the data
-df = pd.DataFrame({
-    'Title': titles,
-    'Link': links
-})
+df = pd.DataFrame(data)
 
 # Save to an Excel file
 excel_file_path = 'scraped_data.xlsx'
