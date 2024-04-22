@@ -1,55 +1,38 @@
-import docx
-from openpyxl import Workbook
+import pandas as pd
+from docx import Document
 
-def scrape_docx_to_excel(docx_file, excel_file):
-  """
-  Extracts text, formatting, and embedded objects from a DOCX file
-  and stores them in a structured Excel spreadsheet.
+# Load the DOCX file
+file_path = 'python-assignment.docx'
+doc = Document(file_path)
 
-  Args:
-      docx_file (str): Path to the DOCX file.
-      excel_file (str): Path to the output Excel file.
-  """
+# Prepare data structures to store the text and links
+titles = []
+links = []
 
-  # Open DOCX file
-  doc = docx.Document(docx_file)
+# Parse the document
+for para in doc.paragraphs:
+    text = para.text.strip()
+    if text:
+        # If the paragraph contains a URL, extract it
+        if "http" in text:
+            # Find all URLs in the text (simple heuristic)
+            urls = [word for word in text.split() if "http" in word]
+            links.extend(urls)
+            # If it's a title followed by links, store them in separate lists
+            title = text.split()[0]  # Assuming the first word is the title
+            titles.extend([title] * len(urls))
+        else:
+            # If the paragraph is not a link, consider it as a title
+            titles.append(text)
 
-  # Create Excel workbook and worksheet
-  wb = Workbook()
-  ws = wb.active
+# Create a DataFrame to store the data
+df = pd.DataFrame({
+    'Title': titles,
+    'Link': links
+})
 
-  # Header row for data fields (customize as needed)
-  ws.append(["Text", "Bold", "Italic", "Underline", "Image Path (if embedded)"])
+# Save to an Excel file
+excel_file_path = 'scraped_data.xlsx'
+df.to_excel(excel_file_path, index=False)
 
-  # Iterate through paragraphs and extract relevant information
-  for paragraph in doc.paragraphs:
-    text = paragraph.text.strip()
-
-    # Check for potential changes in font attribute access
-    if hasattr(paragraph, 'style'):  # Check if style attribute exists
-      font = paragraph.style.font  # Access font from style if available
-    else:
-      font = paragraph.runs[0].font  # Access font from first run if no style
-
-    is_bold = font.bold
-    is_italic = font.italic
-    is_underline = font.underline
-    image_path = None  # Initialize image path
-
-    # Check for inline objects (images) using parent element
-    for inline in paragraph._element.inline_objects:  # Access inline objects from parent element
-      if inline.type == docx.inlineobject.INLINEOBJ_TYPE.PICTURE:
-        image_path = inline.properties.content.image_data.filename  # Extract image path
-
-    # Append data to Excel sheet
-    ws.append([text, is_bold, is_italic, is_underline, image_path])
-
-  # Save Excel file
-  wb.save(excel_file)
-
-# Example usage
-docx_file = "python-assignment.docx"
-excel_file = "extracted_data.xlsx"
-scrape_docx_to_excel(docx_file, excel_file)
-
-print("Data extracted from DOCX and saved to Excel file.")
+print(f"Data has been extracted and stored in {excel_file_path}")
