@@ -1,37 +1,67 @@
+'''Ensure to install the following libraries:
+- requests
+- pandas
+- selenium'''
+''' Download a web driver and set up the path to the driver.'''
+
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 import pandas as pd
+import time
 from docx import Document
 
-# Load the DOCX file
-file_path = 'python-assignment.docx'
-doc = Document(file_path)
 
-# Prepare data structures to store the text and links
-data = []  # List of dictionaries to create a DataFrame
+# Path to your ChromeDriver (change to match your system)
+chromedriver_path = "C:\\WebDriver\\chromedriver.exe"
 
-# Parse the document
-current_title = None
+# Setup Selenium WebDriver with Chrome
+chrome_options = Options()
+chrome_options.add_argument("--headless")  
+service = Service(chromedriver_path)
+driver = webdriver.Chrome(service=service, options=chrome_options)
 
-for para in doc.paragraphs:
-    text = para.text.strip()
-    if not text:
-        continue  # Skip empty paragraphs
+# Read the DOCX file to extract URLs
+doc = Document("python-assignment.docx")
+urls = []
+for paragraph in doc.paragraphs:
+    text = paragraph.text.strip()
+    if text.startswith("http"):
+        urls.append(text)
 
-    if not current_title and "http" not in text:
-        # If the paragraph doesn't contain a URL and we don't have a title yet, set it as the current title
-        current_title = text
+# Data structure to hold all the scraped data
+scraped_data = []
 
-    elif "http" in text:
-        # If the paragraph contains URLs, extract them
-        urls = [word for word in text.split() if "http" in word]
-        for url in urls:
-            # Ensure each URL has an associated title
-            data.append({"Title": current_title, "Link": url})
+# Scrape each URL
+for url in urls:
+    try:
+        driver.get(url)  # Open the URL
+        time.sleep(4)  # Wait for the page to load
 
-# Create a DataFrame to store the data
-df = pd.DataFrame(data)
+        #Extract title, all text, and all links
+        title = driver.title
+        body_text = driver.find_element(By.TAG_NAME, "body").text
+        links = [element.get_attribute("href") for element in driver.find_elements(By.TAG_NAME, "a")]
 
-# Save to an Excel file
-excel_file_path = 'scraped_data.xlsx'
-df.to_excel(excel_file_path, index=False)
+        # Store the data
+        scraped_data.append({
+            "URL": url,
+            "Title": title,
+            "Body Text": body_text[:400],  
+            "Links": links
+        })
+    except Exception as e:
+        print(f"Error scraping {url}: {e}")
 
-print(f"Data has been extracted and stored in {excel_file_path}")
+# Convert scraped data to DataFrame
+df = pd.DataFrame(scraped_data)
+
+# Export to Excel
+output_path = "/path/to/scraped_data.xlsx"
+df.to_excel(output_path, index=False)
+
+# Close the Selenium driver
+driver.quit()
+
+print(f"Data saved to {output_path}")
