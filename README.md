@@ -103,8 +103,3 @@ Contributions to this project are welcome. If you'd like to suggest improvements
 This project is open source and licensed under the [MIT License](https://opensource.org/licenses/MIT). You are free to use, modify, and distribute the code, but remember to attribute the original authors.
 
 ```
-
-### Notes:
-- This README provides a comprehensive overview of the project, including requirements, installation instructions, script workflow, and troubleshooting tips.
-- It can be adjusted based on the specific project setup, such as specifying additional dependencies or custom configurations.
-- The license section should be tailored to your specific licensing requirements.
